@@ -57,15 +57,6 @@ const routes = [
     },
     component: () => import('@/views/ForgetPassword.vue'),
   },
-  {
-    path: '/Moviehub/changepassword/:userID',
-    name: 'changepassword',
-    meta: {
-      title: '改变密码',
-      needLogin: true,
-    },
-    component: () => import('@/views/ChangePassword.vue'),
-  },
 
   {
     path: '/Moviehub/contentpageuser/:userID',
@@ -75,15 +66,6 @@ const routes = [
       title: '登录内容',
     },
     component: () => import('@/views/ContentUser.vue'),
-  },
-  {
-    path: '/Moviehub/dashboard/setting/:userID',
-    name: 'SettingPage',
-    meta: {
-      index: true,
-      title: '设置',
-    },
-    component: () => import('@/views/SettingPage.vue'),
   },
 
   {

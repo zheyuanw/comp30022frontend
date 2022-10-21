@@ -18,6 +18,7 @@
           <div><el-image class="image" :src="this.$route.query.poster"></el-image></div>
           <div class="imdb">imdb rating:{{this.$route.query.rating}}</div>
           <div>{{this.$route.query.plot}}</div>
+       
           </el-card>
           <div v-if="this.getrating.length===0">
              <span class="noreview">No review yet, share you thoughts!</span>
@@ -36,7 +37,8 @@
                     <div class="content">
                           {{getcontent[index].value}}
                     </div>
-                    <span>rating:{{getrating[index].value}}</span>
+                    <el-rate allow-half disabled v-model="getrating[index].value">
+                        rating:{{getrating[index].value}}</el-rate>
                     <span class="date">{{getdate[index].value}}</span>
       
               </el-card>
@@ -71,14 +73,11 @@
         />
       </el-form-item>
       <el-form-item class = "rating" label="Rating" prop="rating">
-        <el-select v-model="form.rating" placeholder="enter your rating">
-          <el-option
-                    v-for="item in rating_list"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value">
-                  </el-option>
-          </el-select>
+        <el-rate v-model="form.rating" :colors="['#99A9BF', '#F7BA2A', '#FF9900']"
+               :max="5"
+               allow-half
+               show-text
+               :texts="['very bad', 'bad', 'normal', 'nice', 'surprise']"></el-rate>
     </el-form-item>
   
     </el-form>
@@ -126,40 +125,16 @@
                 { message: "review cannot be blank", trigger: "change" },
                 { validator: validatePass5, trigger: "blur" }
           ],
-          rating: [
-                { required: true, message: "rating cannot be blank", trigger: "blur" },
-                {  message: "rating cannot be blank", trigger: "change" },
-          ],
         },
         posterlink:"",
         imdbrating:"",
         movietitle:"",
-        rating_list: [{
-            value: '0',
-            label: '0'
-          }, {
-            value: '1',
-            label: '1'
-          }, {
-            value: '2',
-            label: '2'
-          }, {
-            value: '3',
-            label: '3'
-          }, {
-            value: '4',
-            label: '4'
-          }, {
-            value: '5',
-            label: '5'
-          }
-        ],
         dialogVisible:false,
         routeid:JSON.parse(localStorage.getItem('userid')),
         form: {
            movieId:this.$route.params.userID,
            review: "",
-           rating:"",
+           rating:0,
         
         },
         getcontent:[],
