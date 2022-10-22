@@ -59,8 +59,8 @@
   <el-button @click="searchrelmovie()">recommended</el-button></div>
         <el-divider />
 
-
-        <el-space wrap>
+        
+        <!-- <el-space wrap>
           
             <el-card v-for="(item,i) in movietitle" :key="i" class="box-card" 
              style="width: 250px;margin-right:20px"
@@ -76,7 +76,8 @@
                 </div>
             </el-card>
           
-        </el-space>
+        </el-space> -->
+        
 
         <el-backtop :bottom="100">
           <div
@@ -207,7 +208,8 @@
           }
         },
         mounted(){
-          this.getTopmovies()
+
+          //this.getTopmovies()
         },
         methods:{
           searchrelmovie(){
