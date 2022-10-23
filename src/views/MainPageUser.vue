@@ -208,7 +208,6 @@
           }
         },
         mounted(){
-
           //this.getTopmovies()
         },
         methods:{
@@ -309,7 +308,7 @@
               cb(data_list)
             }
           },
-          // 选择下拉
+
           handleSelect (item) {
             console.log(item)
             for(let i = 0; i<this.movielist.length; i++){
