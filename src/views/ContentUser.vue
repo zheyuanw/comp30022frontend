@@ -9,6 +9,15 @@
       </div>
       <div v-else>
         <AvatarIcon :routeID="routeid"/>
+        <div class="personalnfo">
+        <div>{{this.usernamerender}}</div>
+        <div>{{this.agerender}}</div>
+        <div v-if="this.genederrender==='MALE'">
+          <img class="maleimg" src="../assets/male.png"/></div>
+        <div v-else-if="this.genederrender==='FEMALE'">
+          <img class="femaleimg" src="../assets/female.png"/>
+        </div>
+      </div>
       </div>
         </el-header>
         <el-main class="main">
@@ -18,7 +27,9 @@
           <div><el-image class="image" :src="this.$route.query.poster"></el-image></div>
           <div class="imdb">imdb rating:{{this.$route.query.rating}}</div>
           <div>{{this.$route.query.plot}}</div>
-       
+          <div>our rating:<el-rate allow-half disabled v-model="avgrating">
+                        {{this.avgrating}}</el-rate></div>
+          
           </el-card>
           <div v-if="this.getrating.length===0">
              <span class="noreview">No review yet, share you thoughts!</span>
@@ -40,6 +51,9 @@
                     <el-rate allow-half disabled v-model="getrating[index].value">
                         rating:{{getrating[index].value}}</el-rate>
                     <span class="date">{{getdate[index].value}}</span>
+                    <div>{{this.usernamerenderlist[index]}}</div>
+                    <div>{{this.agerenderlist[index]}}</div>
+                    <img class="beforelike" src="../assets/like2.png">
       
               </el-card>
             </el-space>
@@ -114,6 +128,7 @@
       };
       return{
         activeNames: ['1'],
+        avgrating:0,
         // components: {
         //       HubIcon,
         //       AvatarIcon,
@@ -129,6 +144,9 @@
         posterlink:"",
         imdbrating:"",
         movietitle:"",
+        usernamerender:"",
+        agerender:"",
+        genederrender:"",
         dialogVisible:false,
         routeid:JSON.parse(localStorage.getItem('userid')),
         form: {
@@ -139,17 +157,64 @@
         },
         getcontent:[],
         getrating:[],
-        getdate:[]
+        getdate:[],
+        getuserId:[],
+        usernamerenderlist:[],
+        agerenderlist:[],
+        genederrenderlist:[],
+
+        
       }
     },
-    mounted(){
+    created(){
       this.GetAllreviews();
     },
+    mounted(){
+      
+      this.GetAvgrating();
+      this.getuserinfo();
+    },
     methods:{
-      // handleClose(done) {
-      //   this.$confirm('Are you sure to close this dialog?')
-      //     .then()
-      // },
+
+      getuserinfo(){
+              request.get("/user/info/userId="+this.routeid).then(res=>{
+              if (res.status===200){
+                  this.usernamerender=res.data.body.username
+                  this.agerender=res.data.body.age,
+                  this.genederrender=res.data.body.gender
+              }
+              })
+              
+              console.log(this.usernamerenderlist)
+              console.log(this.getuserId)
+      },
+      geteveryuserinfo(){
+        for (let i=0;i<this.getuserId.length;i++){
+                request.get("/user/info/userId="+this.getuserId[i]).then(res=>{
+                this.usernamerenderlist[i]=res.data.body.username
+                this.agerenderlist[i]=res.data.body.age
+                this.genederrenderlist[i]==res.data.body.gender
+                
+                })
+              }
+      },
+      GetAvgrating(){
+        request.get("/post/getAvgRatingByName?movieId="+ this.$route.params.userID).then(res=>{
+          if(res.status===200) {
+            console.log(this.avgrating)
+            console.log(res.data.avgRating)
+           this.avgrating=res.data.avgRating
+           
+          }else{
+            this.$message({
+              type: "error",
+              message: "fail to get due to unexpected reason"
+             })
+          }
+          
+        })
+        
+      },
       GetAllreviews(){
          request.get("/post/?movieId="+this.$route.params.userID).then(res=>{
            if(res.status===200) {
@@ -167,8 +232,13 @@
                   value:res.data[i].lastModifiedDate.slice(0,10),
                   label:res.data[i].lastModifiedDate.slice(0,10)
                 })
+                this.getuserId.push(
+                     res.data[i].userId,
+
+                )
               }
             }
+            this.geteveryuserinfo()
             
            }else{
             this.$message({
@@ -242,6 +312,11 @@
 .header{
   background-color: black;
 }
+.beforelike{
+  width:3%;
+  height:3%;
+  cursor:pointer
+}
 .LRbutton{
   position:relative;
   left:560px;
@@ -291,7 +366,7 @@ height: 550px;
 }
 .date{
   position:relative;
-  left:340px;
+  left:310px;
   bottom:-15px
 }
 .content{
@@ -299,4 +374,16 @@ height: 550px;
   word-wrap: break-word;
   overflow:hidden;
 }
+.personalnfo{
+    color:orange
+  }
+  .maleimg{
+    width:10%;
+    height:10%;
+
+  }
+  .femaleimg{
+    width:10%;
+    height:10%
+  }
 </style>

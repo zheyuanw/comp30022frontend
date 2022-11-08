@@ -22,6 +22,16 @@
         <div>
           <el-button class="newbutton" @click="reset()">Reset</el-button>
         </div> 
+        <div class="personalnfo">
+        <div>{{this.usernamerender}}</div>
+        <div>{{this.agerender}}</div>
+        <div v-if="this.genederrender==='MALE'">
+          <img class="maleimg" src="../assets/male.png"/></div>
+        <div v-else-if="this.genederrender==='FEMALE'">
+          <img class="femaleimg" src="../assets/female.png"/>
+        </div>
+        
+      </div>
       </div>
   
       <div v-if="routeuserID===''|| routeuserID===null">
@@ -34,6 +44,23 @@
       </el-header>
       
       <el-main class="main">
+        <div class="nowplayingtext">Now playing</div>
+        <div class="nowplayingcarousel">
+        <el-carousel height="330px" indicator-position="none" >
+      <el-carousel-item v-for="(item,i) in nowimg" :key="i" >
+
+        <div ><el-image class="nowplayingimg" :src="nowimg[i].value"></el-image></div>
+      </el-carousel-item>
+    </el-carousel>
+  </div>
+  <!-- <el-card class="ourrankcard">
+  <div v-for="(item,i) in this.avgratingrank" :key="i" >
+    <div >
+    <el-rate allow-half disabled v-model="avgratingrank[i]">
+                        {{this.avgratingrank[i]}}</el-rate></div>
+                      </div>
+      </el-card> -->
+    <el-divider/>
         <div class="recommend">Recommend movies</div>
         <div class="filteroptiongroup">
         <el-select v-model="value2" class="select" placeholder="sortBy">
@@ -56,11 +83,14 @@
     />
   </el-select>
   
-  <el-button @click="searchrelmovie()">recommended</el-button></div>
+  <el-button @click="searchrelmovie()">recommended</el-button>
+  <el-button @click="getTopmovies()">Top 250</el-button>
+</div>
+  
         <el-divider />
 
         
-        <!-- <el-space wrap>
+        <el-space wrap>
           
             <el-card v-for="(item,i) in movietitle" :key="i" class="box-card" 
              style="width: 250px;margin-right:20px"
@@ -73,10 +103,12 @@
                   <span><el-image :src="movieposter[i].value"></el-image></span>
                   <el-divider/>
                   <span>imdb rating:{{movieofficialrating[i].value}}</span>
+                  <div>our rating:<el-rate allow-half disabled v-model="avgrating[i]">
+                        {{this.avgrating[i]}}</el-rate></div>
                 </div>
             </el-card>
           
-        </el-space> -->
+        </el-space>
         
 
         <el-backtop :bottom="100">
@@ -107,7 +139,7 @@
   import HubIcon from '@/components/HubIcon.vue';
   import AvatarIcon from '@/components/AvatarIcon.vue';
   import request2 from "@/utils/Request2.js";
-  
+  import request from "@/utils/RequestFile.js"
   export default{
       data(){
           return{
@@ -204,13 +236,116 @@
             poster: "",
             rating: "",
             title: "",
-            routeuserID:JSON.parse(localStorage.getItem('userid'))
+            usernamerender:"",
+            agerender:"",
+            genederrender:"",
+            routeuserID:JSON.parse(localStorage.getItem('userid')),
+            avgrating:[],
+            nowimg:[],
+            ourrankid:[],
+            avgratingrank:[]
           }
         },
+        created(){
+          this.getTopmovies()
+        },
+        
         mounted(){
-          //this.getTopmovies()
+          this.Getnowplaying()
+          this.getuserinfo()
+          //this.GetTopmovierank()
+   
         },
         methods:{
+          unique (arr) {
+           return Array.from(new Set(arr))
+          },
+          GetTopmovierank(){
+         request.get("/post/?movieId="+this.$route.params.userID).then(res=>{
+           if(res.status===200) {
+            for (let i=0;i<res.data.length;i++){
+                this.ourrankid.push(
+                     res.data[i].movieId,
+
+                )
+    
+            }
+            this.ourrankid=this.unique(this.ourrankid)
+            console.log(this.ourrankid)
+            for (let i=0;i<10;i++){
+              request.get("/post/getAvgRatingByName?movieId="+ this.ourrankid[i]).then(res=>{
+                if(res.status===200) {
+                  
+                   this.avgratingrank[i]=res.data.avgRating
+                
+                }else{
+                  this.$message({
+                    type: "error",
+                    message: "fail to get due to unexpected reason"
+                  })
+                }
+                this.avgratingrank=this.avgratingrank.sort().reverse()
+                console.log(this.avgratingrank)
+              })
+            }
+
+            
+           }else{
+            this.$message({
+              type: "error",
+              message: "fail to get due to unexpected reason"
+             })
+            }
+          })
+       
+      },
+          Getnowplaying(){
+            request2.get("/?groups=now-playing-us").then(res=>{
+              if(res.status === 200){
+                //for(let i =0; i<res.data.results.length; i++)
+              for(let i =0; i<10; i++) {
+                this.nowimg.push({
+                  value:res.data.results[i].image,
+                  label:res.data.results[i].image
+                })
+              }
+            }else {
+              this.$message({
+                type: "error",
+                message: "unsucessfully render"
+          })
+        }
+            })
+          },
+          GetAvgrating(){
+            for (let i=0;i<this.movieid.length;i++){
+              request.get("/post/getAvgRatingByName?movieId="+ this.movieid[i].value).then(res=>{
+          if(res.status===200) {
+            this.avgrating[i]=res.data.avgRating
+           
+          }else{
+            this.$message({
+              type: "error",
+              message: "fail to get due to unexpected reason"
+             })
+          }
+          
+        })
+
+            }
+        
+        
+      },
+          getuserinfo(){
+              request.get("/user/info/userId="+this.routeuserID).then(res=>{
+              if (res.status===200){
+                  this.usernamerender=res.data.body.username
+                  this.agerender=res.data.body.age,
+                  this.genederrender=res.data.body.gender
+              }
+              })
+              console.log(this.genederrender)
+          },
           searchrelmovie(){
             this.clearall();
             console.log(this.movietitle);
@@ -260,6 +395,8 @@
                       message: "unsucessfully search"
                 })
               }
+              this.GetAvgrating()
+              console.log(this.avgrating)
             })
           
           
@@ -273,9 +410,7 @@
              this.movieposter=[];
           },
   
-  // 查询
           querySearchAsync (queryString, cb) {
-            // data 为可选列表数据
             let data_list = []
             
             if (queryString.length > 0) {
@@ -334,10 +469,6 @@
           getInputValue(searchvalue) {
             console.log(searchvalue);
             
-            /*if(this.last !== searchvalue){
-              this.itemlist.length = 0;
-            }*/
-            
             request2.get("/?title=" + searchvalue).then(res => {
               if(res.status === 200){
                 this.itemlist.length = 0;
@@ -359,10 +490,10 @@
                 })
               }
             })
-            // 请求获取筛选列表
             
           },
           getTopmovies(){
+            this.clearall()
             request2.get("/?groups=top_250").then(res=>{
                 if(res.status === 200){
               
@@ -393,6 +524,7 @@
                         label:res.data.results[i].genres
                       })
                     }
+                    this.GetAvgrating()
                   }else {
                     this.$message({
                       type: "error",
@@ -486,5 +618,34 @@
     top:13px;
     left:0px;
   
+  }
+  .personalnfo{
+    color:orange
+  }
+  .maleimg{
+    width:10%;
+    height:7%;
+
+  }
+  .femaleimg{
+    width:10%;
+    height:10%
+  }
+  .nowplayingtext{
+    color:orange;
+    font-size:20px;
+  }
+  .nowplayingimg{
+    width:300px;
+    height:330px
+  }
+  .nowplayingcarousel{
+    width:40%
+  }
+  .ourrankcard{
+    width:30%;
+    position:relative;
+    top:-320px;
+    left:500px
   }
   </style>

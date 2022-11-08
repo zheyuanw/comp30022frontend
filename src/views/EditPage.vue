@@ -65,44 +65,8 @@
   </template>
 
 
-  <script lang="ts" setup>
-    import { ref } from 'vue'
-    import { ElMessage, ElMessageBox } from 'element-plus'
-
-import type { UploadProps, UploadUserFile } from 'element-plus'
-import HubIcon from '@/components/HubIcon.vue';
-import AvatarIcon from '@/components/AvatarIcon.vue';
-const textarea = ref('')
-const value = ref()
-
-const fileList = ref<UploadUserFile[]>([
-
-])
-
-const handleRemove: UploadProps['onRemove'] = (file, uploadFiles) => {
-  console.log(file, uploadFiles)
-}
-
-const handlePreview: UploadProps['onPreview'] = (uploadFile) => {
-  console.log(uploadFile)
-}
-
-const handleExceed: UploadProps['onExceed'] = (files, uploadFiles) => {
-  ElMessage.warning(
-    `The limit is 1, you selected ${files.length} files this time, add up to ${
-      files.length + uploadFiles.length
-    } totally`
-  )
-}
-
-const beforeRemove: UploadProps['beforeRemove'] = (uploadFile) => {
-  return ElMessageBox.confirm(
-    `Cancel the transfert of ${uploadFile.name} ?`
-  ).then(
-    () => true,
-    () => false
-  )
-}
+  <script >
+    
     </script>
 
 <style>

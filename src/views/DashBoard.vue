@@ -18,9 +18,24 @@
                     
                     <span class="content">{{getcontent[index].value}}</span>
                     <el-divider/>
-                    <span>rating:{{getrating[index].value}}</span>
-                    <el-icon class="editreviewbut" @click="dialogVisible =true"><Edit /></el-icon>
-                    <el-icon class="deletereviewbut"><Delete /></el-icon>
+                    <div>rating:<el-rate allow-half disabled v-model="getrating[index].value">
+                        {{getrating[index].value}}</el-rate></div>
+                    <el-icon class="editreviewbut"
+                        @click="dialogVisible =true;this.curreviewid=getreviewid[index].value"><Edit /></el-icon>
+
+                        <el-popconfirm
+                          confirm-button-text="Yes"
+                          cancel-button-text="No"
+                          :icon="InfoFilled"
+                          icon-color="#626AEF"
+                          title="Are you sure to delete this review?"
+                          @confirm="deletepost(getreviewid[index].value)"
+                        >
+                          <template #reference>
+                            <el-icon class="deletereviewbut"><Delete /></el-icon>
+                          </template>
+                        </el-popconfirm>
+                    
                   </div>
               </el-card>
             </el-space>
@@ -65,7 +80,7 @@
               <template #footer>
                 <span class="dialog-footer">
                   <el-button @click="dialogVisible = false">Cancel</el-button>
-                  <el-button type="primary" @click="dialogVisible = false"
+                  <el-button type="primary" @click="editreviews('form')"
                     >Confirm</el-button
                   >
                 </span>
@@ -92,26 +107,8 @@
           getcontent:[],
           getrating:[],
           dialogVisible :false,
-          rating_list: [{
-            value: '0',
-            label: '0'
-          }, {
-            value: '1',
-            label: '1'
-          }, {
-            value: '2',
-            label: '2'
-          }, {
-            value: '3',
-            label: '3'
-          }, {
-            value: '4',
-            label: '4'
-          }, {
-            value: '5',
-            label: '5'
-          }
-        ],
+          getreviewid:[],
+          curreviewid:'',
         form: {
            review: "",
            rating:"",
@@ -147,9 +144,14 @@
                   value:res.data[i].rating,
                   label:res.data[i].rating
                 })
+                this.getreviewid.push({
+                  value:res.data[i].id,
+                  label:res.data[i].id
+                })
+
               }
             }
-            
+            console.log(this.getreviewid)
            }else{
             this.$message({
               type: "error",
@@ -158,7 +160,54 @@
             }
           })
        
-      }
+        },
+        editreviews(formName){
+          this.dialogVisible = false,
+          this.$refs[formName].validate((valid) => {
+            if (valid && this.form.rating!=="" && this.form.review!==""){
+              request.put("/post/"+this.curreviewid, {review:this.form.review, rating:this.form.rating}).then(res=>{
+              if(res.status===200) {
+                this.$message({
+                type: "success",
+                message: "successfully edited"
+                })
+                this.$router.go(0);
+              }else{
+                this.$message({
+                  type: "error",
+                  message: "fail to edit review due to unexpected reason"
+                })
+                }
+              })
+            }else{
+              this.$message({
+                  type: "error",
+                  message: "fill in the form first!"
+                  
+              })
+              this.dialogVisible = true
+            }
+          })
+        },
+        deletepost(id){
+          request.delete("/post/"+id).then(res=>{
+           if(res.status===200) {
+            this.$message({
+            type: "success",
+            message: "successfully deleted"
+             })
+             this.$router.go(0);
+            
+           }else{
+            this.$message({
+              type: "error",
+              message: "fail to edit review due to unexpected reason"
+             })
+            }
+          })
+
+        },
+       
       },
       components: { HubIcon,AvatarIcon,Edit,Delete}
     }
