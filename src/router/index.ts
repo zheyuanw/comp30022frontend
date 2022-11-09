@@ -75,7 +75,7 @@ const router = createRouter({
 })
 router.beforeEach((to, from, next) => {
   if (
-    to.path === '/moviehub/loginpage' ||
+    to.name === 'login' ||
     to.name === 'Register' ||
     to.name === 'forgetpassword' ||
     to.name === 'MoviemainPage2' ||
