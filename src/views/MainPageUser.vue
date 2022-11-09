@@ -4,10 +4,8 @@
     <el-container>
       <el-header class="header">
         <div class="seaerchthreegroup">
-         
-  
             <el-autocomplete 
-              placeholder="search your movie" 
+              placeholder="search your movie here!" 
               popper-class="my-autocomplete" 
               class="input-with-select" 
               v-model="keywords" 
@@ -15,35 +13,43 @@
               :trigger-on-focus="false" 
               @select="handleSelect">
             </el-autocomplete>
-  
-        <div>
-          <el-button type="primary" class="searchbut"  >Search</el-button>
-        </div>
-        <div>
-          <el-button class="newbutton" @click="reset()">Reset</el-button>
-        </div> 
-        <div class="personalnfo">
-        <div>{{this.usernamerender}}</div>
-        <div>{{this.agerender}}</div>
-        <div v-if="this.genederrender==='MALE'">
-          <img class="maleimg" src="../assets/male.png"/></div>
-        <div v-else-if="this.genederrender==='FEMALE'">
-          <img class="femaleimg" src="../assets/female.png"/>
-        </div>
-        
+
       </div>
-      </div>
-  
+      
       <div v-if="routeuserID===''|| routeuserID===null">
-       <el-button type="warning" round class="LRbutton" @click="$router.push('/moviehub/loginpage')">Login/Register</el-button> 
+        <el-popover
+          placement="top-start"
+          title="Notice"
+          :width="200"
+          trigger="hover"
+          content="after login you can post review, like review, see your own past reviews and much more!"
+        >
+          <template #reference>
+            <el-button type="warning" round class="LRbutton" @click="$router.push('/moviehub/loginpage')">Login/Register</el-button> 
+          </template>
+        </el-popover>
+       
       </div>
       <div v-else>
         <AvatarIcon :routeID="routeuserID"/>
+        
+      <div class="personalnfo"> 
+        <div>{{this.usernamerender}}  age:{{this.agerender}}
+          <div class="genderposition" v-if="this.genederrender==='MALE'">
+          <img class="maleimg" src="../assets/3233508.png"/></div>
+        <div class="genderposition" v-else-if="this.genederrender==='FEMALE'">
+          <img class="femaleimg" src="../assets/3233515.png"/>
+        </div>
+        </div>
       </div>
+        
+      </div>
+
   
       </el-header>
       
       <el-main class="main">
+        <div class="nowgroup">
         <div class="nowplayingtext">Now playing</div>
         <div class="nowplayingcarousel">
         <el-carousel height="330px" indicator-position="none" >
@@ -53,13 +59,7 @@
       </el-carousel-item>
     </el-carousel>
   </div>
-  <!-- <el-card class="ourrankcard">
-  <div v-for="(item,i) in this.avgratingrank" :key="i" >
-    <div >
-    <el-rate allow-half disabled v-model="avgratingrank[i]">
-                        {{this.avgratingrank[i]}}</el-rate></div>
-                      </div>
-      </el-card> -->
+  </div>
     <el-divider/>
         <div class="recommend">Recommend movies</div>
         <div class="filteroptiongroup">
@@ -83,13 +83,14 @@
     />
   </el-select>
   
-  <el-button @click="searchrelmovie()">recommended</el-button>
+  <el-button class= "recbutton" @click="searchrelmovie()">recommended</el-button>
   <el-button @click="getTopmovies()">Top 250</el-button>
+  <el-button @click="getratedmovies()">Rated movies</el-button>
 </div>
   
         <el-divider />
 
-        
+        <div v-if="this.ourrank===false">
         <el-space wrap>
           
             <el-card v-for="(item,i) in movietitle" :key="i" class="box-card" 
@@ -109,8 +110,25 @@
             </el-card>
           
         </el-space>
-        
+      </div>
+      <div v-else>
+        <el-space wrap>
+          
+          <el-card v-for="(item,i) in ourranktitle" :key="i" class="box-card" 
+           style="width: 250px;margin-right:20px">
 
+              <div class="card-header">
+                <span>{{ourranktitle[i]}}</span>
+                <el-divider/>
+                <span><el-image :src="ourrankposter[i]"></el-image></span>
+                <el-divider/>
+                <div>our rating:<el-rate allow-half disabled v-model="avgratingrank[i]">
+                      {{this.avgratingrank[i]}}</el-rate></div>
+              </div>
+          </el-card>
+        
+      </el-space>
+      </div>
         <el-backtop :bottom="100">
           <div
             style="
@@ -243,7 +261,10 @@
             avgrating:[],
             nowimg:[],
             ourrankid:[],
-            avgratingrank:[]
+            avgratingrank:[],
+            ourranktitle:[],
+            ourrankposter:[],
+            ourrank:false,
           }
         },
         created(){
@@ -252,44 +273,47 @@
         
         mounted(){
           this.Getnowplaying()
-          this.getuserinfo()
-          //this.GetTopmovierank()
-   
+          if (localStorage.getItem("userid")!==null && localStorage.getItem("userid")!==undefined){
+            this.getuserinfo()
+          }
         },
         methods:{
+          
           unique (arr) {
            return Array.from(new Set(arr))
           },
-          GetTopmovierank(){
+          getratedmovies(){
+            this.clearall();
+            this.ourrank=true;
          request.get("/post/?movieId="+this.$route.params.userID).then(res=>{
            if(res.status===200) {
             for (let i=0;i<res.data.length;i++){
                 this.ourrankid.push(
                      res.data[i].movieId,
-
                 )
-    
+                this.ourranktitle.push(
+                     res.data[i].movieName,
+                )
+                this.ourrankposter.push(
+                     res.data[i].poster,
+                )
             }
             this.ourrankid=this.unique(this.ourrankid)
-            console.log(this.ourrankid)
-            for (let i=0;i<10;i++){
+            this.ourranktitle=this.unique(this.ourranktitle)
+            for (let i=0;i<this.ourrankid.length;i++){
               request.get("/post/getAvgRatingByName?movieId="+ this.ourrankid[i]).then(res=>{
                 if(res.status===200) {
-                  
-                   this.avgratingrank[i]=res.data.avgRating
-                
+                  this.avgratingrank[i]=res.data[0].avgRating
+
                 }else{
                   this.$message({
                     type: "error",
                     message: "fail to get due to unexpected reason"
                   })
                 }
-                this.avgratingrank=this.avgratingrank.sort().reverse()
-                console.log(this.avgratingrank)
               })
+              
             }
-
-            
            }else{
             this.$message({
               type: "error",
@@ -302,7 +326,6 @@
           Getnowplaying(){
             request2.get("/?groups=now-playing-us").then(res=>{
               if(res.status === 200){
-                //for(let i =0; i<res.data.results.length; i++)
               for(let i =0; i<10; i++) {
                 this.nowimg.push({
                   value:res.data.results[i].image,
@@ -321,7 +344,7 @@
             for (let i=0;i<this.movieid.length;i++){
               request.get("/post/getAvgRatingByName?movieId="+ this.movieid[i].value).then(res=>{
           if(res.status===200) {
-            this.avgrating[i]=res.data.avgRating
+            this.avgrating[i]=(res.data)[0].avgRating
            
           }else{
             this.$message({
@@ -333,8 +356,6 @@
         })
 
             }
-        
-        
       },
           getuserinfo(){
               request.get("/user/info/userId="+this.routeuserID).then(res=>{
@@ -348,6 +369,7 @@
           },
           searchrelmovie(){
             this.clearall();
+            this.ourrank=false
             console.log(this.movietitle);
             var outcome;
             if (this.value2!=='' && this.value3===''){
@@ -395,6 +417,7 @@
                       message: "unsucessfully search"
                 })
               }
+              
               this.GetAvgrating()
               console.log(this.avgrating)
             })
@@ -408,6 +431,7 @@
              this.moviegenre=[];
              this.movieofficialrating=[];
              this.movieposter=[];
+             this.avgrating=[];
           },
   
           querySearchAsync (queryString, cb) {
@@ -494,6 +518,7 @@
           },
           getTopmovies(){
             this.clearall()
+            this.ourrank=false
             request2.get("/?groups=top_250").then(res=>{
                 if(res.status === 200){
               
@@ -545,6 +570,10 @@
   background-color: black;
     
   }
+  .recbutton{
+    position:relative;
+    right:180px;
+  }
   .searchbar{
     margin-left: 100px;
     width:20%;
@@ -558,6 +587,10 @@
   .LRbutton{
   position:relative;
   left:580px;
+  top:-35px
+  }
+  .seaerchthreegroup{
+    margin-top: 15px;
   }
   
   .search{
@@ -572,7 +605,7 @@
   .LRbutton{
   position:relative;
   left:560px;
-  top:-20px
+  top:-35px
   }
   .setting{
   margin-top:10px
@@ -610,30 +643,38 @@
   }
   .filteroptiongroup{
     position:relative;
-    left:70px;
+    left:150px;
   }
-  .seaerchthreegroup{
   
-    position:relative;
-    top:13px;
-    left:0px;
-  
-  }
   .personalnfo{
-    color:orange
+    color:orange;
+    position: relative;
+    bottom:10px;
+    margin-top: -10px;
+    left: 470px;
+  }
+  .genderposition{
+    position:relative;
+    left:-90px;
+    top:-20px
   }
   .maleimg{
-    width:10%;
-    height:7%;
+
+    width:2%;
+    height:1%;
 
   }
   .femaleimg{
-    width:10%;
-    height:10%
+    
+    width:2%;
+    height:1%
   }
   .nowplayingtext{
     color:orange;
-    font-size:20px;
+    left:-360px;
+    position:relative;
+    font-size:25px;
+    margin-bottom: 15px;
   }
   .nowplayingimg{
     width:300px;
@@ -646,6 +687,19 @@
     width:30%;
     position:relative;
     top:-320px;
+
     left:500px
+  }
+  .ourranktext{
+    color:orange;
+    font-size:25px;
+    margin-bottom: 15px;
+    position:relative;
+    left:60px;
+    top:-40px
+  }
+  .nowgroup{
+    position:relative;
+    left:360px;
   }
   </style>

@@ -5,18 +5,31 @@
         <el-header class="header">
          
       <div v-if="routeid===''|| routeid===null">
-       <el-button type="warning" round class="LRbutton" @click="$router.push('/moviehub/loginpage')">Login/Register</el-button> 
+        <el-popover
+          placement="top-start"
+          title="Notice"
+          :width="200"
+          trigger="hover"
+          content="after login you can post review, like review, see your own past reviews and much more!"
+        >
+          <template #reference>
+            <el-button type="warning" round class="LRbutton" @click="$router.push('/moviehub/loginpage')">Login/Register</el-button> 
+          </template>
+        </el-popover>
       </div>
       <div v-else>
         <AvatarIcon :routeID="routeid"/>
         <div class="personalnfo">
-        <div>{{this.usernamerender}}</div>
-        <div>{{this.agerender}}</div>
-        <div v-if="this.genederrender==='MALE'">
-          <img class="maleimg" src="../assets/male.png"/></div>
+        <div class="usernamer"> <div>
+          
+          {{this.usernamerender}}  age:{{this.agerender}}</div>
+          <div v-if="this.genederrender==='MALE'">
+          <img class="maleimg" src="../assets/3233508.png"/></div>
         <div v-else-if="this.genederrender==='FEMALE'">
-          <img class="femaleimg" src="../assets/female.png"/>
-        </div>
+          <img class="femaleimg" src="../assets/3233515.png"/>
+        </div></div>
+
+  
       </div>
       </div>
         </el-header>
@@ -37,23 +50,35 @@
           <div v-else>
             <el-space direction="vertical" class="reviewcard">
               <el-card v-for="(item,index) in getcontent" :key="index" style="width: 830px">
-
-                    <!-- <el-collapse v-model="activeNames" >
-                      <el-collapse-item title="see comments" name="1">
-                        <div class="content">
-                          {{getcontent[index].value}}
-                        </div>
-                      </el-collapse-item>
-                    </el-collapse> -->
-                    <div class="content">
-                          {{getcontent[index].value}}
+                    <div class="nameandage">
+                      <el-avatar :src="this.getavatar1[index]"></el-avatar>
+                      {{this.usernamerenderlist[index]}}  age:{{this.agerenderlist[index]}}
+                      
                     </div>
                     <el-rate allow-half disabled v-model="getrating[index].value">
                         rating:{{getrating[index].value}}</el-rate>
-                    <span class="date">{{getdate[index].value}}</span>
-                    <div>{{this.usernamerenderlist[index]}}</div>
-                    <div>{{this.agerenderlist[index]}}</div>
-                    <img class="beforelike" src="../assets/like2.png">
+                    <el-divider/>
+                    <div class="content">
+                          {{getcontent[index].value}}
+                    </div>
+                    
+                    <div class="date">edited on:{{getdate[index].value}}</div>
+                    
+                    
+                    <div v-if="routeid===''|| routeid===null">
+                      <img class="beforelike" src="../assets/like2.png">{{this.getliketotal[index]}}
+                      </div>
+                      <div v-else>
+                        <div v-if="this.getlikestatus[index]==='UNKNOWN'">
+                          <img class="beforelike" @click="changetolike(getreviewid[index])" src="../assets/like2.png"/>
+                          {{this.getliketotal[index]}}
+                        </div>
+                        <div v-else-if="this.getlikestatus[index]==='LIKE'">
+                          <img class="beforelike" @click="changetolike(getreviewid[index])"  src="../assets/like1.png"/>
+                          {{this.getliketotal[index]}}
+                        </div>
+              
+                      </div>            
       
               </el-card>
             </el-space>
@@ -153,6 +178,8 @@
            movieId:this.$route.params.userID,
            review: "",
            rating:0,
+           movieName:this.$route.query.title,
+           poster:this.$route.query.poster
         
         },
         getcontent:[],
@@ -162,8 +189,11 @@
         usernamerenderlist:[],
         agerenderlist:[],
         genederrenderlist:[],
-
-        
+        getreviewid:[],
+        getliketotal:[],
+        getlikestatus:[],
+        getavatar1:[],
+        imageUrl:''
       }
     },
     created(){
@@ -175,7 +205,28 @@
       this.getuserinfo();
     },
     methods:{
+      changetolike(index){
+        request.post("/post/"+index+"/like").then(res=>{
+          if (res.status===200){
 
+             this.$router.go(0)
+          }else{
+            this.$message({
+              type: "error",
+              message: "fail to like the review!"
+             })
+          }
+        })
+      },
+      getalllike(){
+        for (let i=0;i<this.getuserId.length;i++){
+            request.get("/post/"+this.getreviewid[i]+"/like").then(res=>{
+              this.getliketotal[i]=res.data.body.count
+              this.getlikestatus[i]=res.data.body.status
+            
+            })
+        }
+      },
       getuserinfo(){
               request.get("/user/info/userId="+this.routeid).then(res=>{
               if (res.status===200){
@@ -202,8 +253,8 @@
         request.get("/post/getAvgRatingByName?movieId="+ this.$route.params.userID).then(res=>{
           if(res.status===200) {
             console.log(this.avgrating)
-            console.log(res.data.avgRating)
-           this.avgrating=res.data.avgRating
+
+           this.avgrating=res.data[0].avgRating
            
           }else{
             this.$message({
@@ -214,6 +265,22 @@
           
         })
         
+      },
+      getavatar(){
+        for (let i=0;i<this.getuserId.length;i++){
+  
+          request.get("/photo/userId="+this.getuserId[i], {responseType: "blob"}).then(res=>{
+            if (res.status===200){
+              const fileReader = new FileReader()
+                  fileReader.readAsDataURL(res.data)
+                  fileReader.onload = e => {
+                    this.getavatar1[i]=e.target.result
+              }
+      
+            }
+
+          })
+        }
       },
       GetAllreviews(){
          request.get("/post/?movieId="+this.$route.params.userID).then(res=>{
@@ -232,13 +299,20 @@
                   value:res.data[i].lastModifiedDate.slice(0,10),
                   label:res.data[i].lastModifiedDate.slice(0,10)
                 })
+                this.getreviewid.push(
+                  res.data[i].id
+          
+                )
                 this.getuserId.push(
                      res.data[i].userId,
 
                 )
               }
             }
-            this.geteveryuserinfo()
+            this.geteveryuserinfo();
+            this.getalllike();
+            this.getavatar()
+            console.log(this.getlikestatus)
             
            }else{
             this.$message({
@@ -262,6 +336,7 @@
                         type: "success",
                         message: "successfully post the movie"
                       })
+                      this.$router.go(0)
                     } else {
                       this.$message({
                         type: "error",
@@ -366,8 +441,8 @@ height: 550px;
 }
 .date{
   position:relative;
-  left:310px;
-  bottom:-15px
+  left:320px;
+  bottom:-30px
 }
 .content{
   word-break: break-all;
@@ -378,12 +453,32 @@ height: 550px;
     color:orange
   }
   .maleimg{
+    position:relative;
+    left:-90px;
+    top:-20px;
     width:10%;
     height:10%;
 
   }
   .femaleimg{
+    position:relative;
+    left:-90px;
+    top:-20px;
     width:10%;
-    height:10%
+    height:10%;
   }
+  .beforelike :hover{
+  box-shadow: 1px 1px 1px black;
+}
+  .usernamer{
+    margin-left:1000px;
+    padding:1px;
+    margin-top:10px;
+  }
+  /* .nameandage{
+    
+    text-align:left;
+    margin-left:50px;
+    margin-bottom: 20px;
+  } */
 </style>

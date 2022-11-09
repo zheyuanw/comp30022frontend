@@ -4,7 +4,15 @@
   <div class="common-layout">
       <el-container>
         <el-header class="header" >
-          
+          <div class="personalnfo"> 
+        <div>{{this.usernamerender}}  age:{{this.agerender}}
+          <div class="genderposition" v-if="this.genederrender==='MALE'">
+          <img class="maleimg" src="../assets/3233508.png"/></div>
+        <div class="genderposition" v-else-if="this.genederrender==='FEMALE'">
+          <img class="femaleimg" src="../assets/3233515.png"/>
+        </div>
+        </div>
+        </div>
           <AvatarIcon/>
         
         </el-header>
@@ -15,11 +23,26 @@
               style="width: 830px">
                 
                   <div class="card-header" >
-                    
+                    <div>
+                      <el-image class="dashboardimg" :src="this.getposter[index]"></el-image>
+                    </div>
+                    <div class="moviename">
+                      {{this.getmoviename[index]}}
+                    </div>
+                    <div class="reviewtext">Review</div>
                     <span class="content">{{getcontent[index].value}}</span>
                     <el-divider/>
                     <div>rating:<el-rate allow-half disabled v-model="getrating[index].value">
                         {{getrating[index].value}}</el-rate></div>
+    
+                    <div v-if="this.getliketotal[index]==='0'">
+                      <img class="beforelike" src="../assets/like2.png"/>{{this.getliketotal[index]}}
+                    </div>
+                    <div v-else>
+                      <img class="beforelike" src="../assets/like1.png"/>{{this.getliketotal[index]}}
+                    </div>
+
+                    
                     <el-icon class="editreviewbut"
                         @click="dialogVisible =true;this.curreviewid=getreviewid[index].value"><Edit /></el-icon>
 
@@ -66,14 +89,11 @@
             />
           </el-form-item>
           <el-form-item class = "rating" label="Rating" prop="rating">
-            <el-select v-model="form.rating" placeholder="enter your rating">
-              <el-option
-                        v-for="item in rating_list"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value">
-                      </el-option>
-              </el-select>
+            <el-rate v-model="form.rating" :colors="['#99A9BF', '#F7BA2A', '#FF9900']"
+                    :max="5"
+                    allow-half
+                    show-text
+                    :texts="['very bad', 'bad', 'normal', 'nice', 'surprise']"></el-rate>
         </el-form-item>
       
         </el-form>
@@ -109,6 +129,12 @@
           dialogVisible :false,
           getreviewid:[],
           curreviewid:'',
+          getposter:[],
+          getmoviename:[],
+          getliketotal:[],
+          usernamerender:"",
+            agerender:"",
+            genederrender:"",
         form: {
            review: "",
            rating:"",
@@ -119,16 +145,14 @@
                 { required: true, message: "review cannot be blank", trigger: "blur" },
                 { message: "review cannot be blank", trigger: "change" },
           ],
-          rating: [
-                { required: true, message: "rating cannot be blank", trigger: "blur" },
-                {  message: "rating cannot be blank", trigger: "change" },
-          ],
+
          },
         }
       },
       
       mounted(){
          this.getpastreviews()
+         this.getuserinfo()
       },
       methods:{
         getpastreviews(){
@@ -148,10 +172,15 @@
                   value:res.data[i].id,
                   label:res.data[i].id
                 })
+                this.getposter.push(res.data[i].poster,
+
+                )
+                this.getmoviename.push(res.data[i].movieName,
+                )
 
               }
             }
-            console.log(this.getreviewid)
+            this.getalllike();
            }else{
             this.$message({
               type: "error",
@@ -159,8 +188,27 @@
              })
             }
           })
+          
        
         },
+        getalllike(){
+        for (let i=0;i<this.getcontent.length;i++){
+            request.get("/post/"+this.getreviewid[i].value+"/like").then(res=>{
+              this.getliketotal[i]=res.data.body.count
+            
+            })
+        }
+       },
+        getuserinfo(){
+              request.get("/user/info/userId="+this.$route.params.userID).then(res=>{
+              if (res.status===200){
+                  this.usernamerender=res.data.body.username
+                  this.agerender=res.data.body.age,
+                  this.genederrender=res.data.body.gender
+              }
+              })
+              console.log(this.genederrender)
+          },
         editreviews(formName){
           this.dialogVisible = false,
           this.$refs[formName].validate((valid) => {
@@ -247,9 +295,56 @@ body {
   width:120%;
   cursor:pointer;
 }
+.editreviewbut :hover{
+  box-shadow: 1px 1px 1px grey;
+}
+.deletereviewbut :hover{
+  box-shadow: 1px 1px 1px grey;
+}
+
 .deletereviewbut{
   position:relative;
   left:350px;
   cursor:pointer
+}
+.dashboardimg{
+  width:20%;
+  height:20%
+}
+.moviename{
+  font-style: italic;
+  margin:20px
+}
+.reviewtext{
+  font-size:x-large;
+  margin-bottom:15px;
+  color:orange
+}
+.personalnfo{
+    color:orange;
+    position: relative;
+    top:15px;
+    margin-top: -10px;
+    left: 470px;
+  }
+  .genderposition{
+    left: 500px;
+    
+  }
+  .maleimg{
+
+    width:2%;
+    height:1%;
+
+  }
+  .femaleimg{
+    
+    width:2%;
+    height:1%
+  }
+  .beforelike{
+  width:3%;
+  height:3%;
+
 }
 </style>

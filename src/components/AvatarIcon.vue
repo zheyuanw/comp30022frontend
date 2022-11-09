@@ -31,9 +31,9 @@
     <template #reference>
       <div class="avatar1" >
         <el-avatar 
-        src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+        
         @click="$router.push('/moviehub/dashboard/'+rID)"
-          /><!--头像-->
+          ><!--头像--><img :src=this.imageUrl /></el-avatar>
     </div>
     </template>
   </el-popover>
@@ -136,10 +136,9 @@
     :on-preview="handlePreview"
     :before-remove="beforeRemove"
     :limit="1"
+    name="image"
     :on-exceed="handleExceed"
     :auto-upload="false"
-  
-    list-type="multipart/form-data"
     :headers="this.h"
   >
     <el-button type="primary">Click to upload</el-button>
@@ -149,8 +148,6 @@
       </div>
     </template>
   </el-upload>
-  
-     
       </el-form-item> 
       
     <template #footer>
@@ -206,7 +203,7 @@ export default{
       }
     }
     return{
-      h:{Authorization:'Bearer ' + JSON.parse(localStorage.getItem("user")),'Content-type':"application/json"},
+      h:{Authorization:'Bearer ' + JSON.parse(localStorage.getItem("user"))},
       imageUrl:'',
       file:'',
       fileList: [],
@@ -228,11 +225,11 @@ export default{
       },
       options:[
         {
-          value: '0',
+          value: 'male',
           label: 'male',
         },
         {
-          value: '1',
+          value: 'female',
           label: 'female',
         },
       
@@ -248,7 +245,11 @@ export default{
 
    },
    mounted(){
+    if (localStorage.getItem("userid")!==null && localStorage.getItem("userid")!==undefined){
      this.getuserinfo()
+     
+     this.getavatar()
+    }
    },
    methods: {
      getuserinfo(){
@@ -260,6 +261,26 @@ export default{
           }
          })
      },
+     getavatar(){
+        request.get("/photo/userId="+this.rID, {responseType: "blob"}).then(res=>{
+          if (res.status===200){
+            const fileReader = new FileReader()
+                fileReader.readAsDataURL(res.data)
+                fileReader.onload = e => {
+                  this.imageUrl = e.target.result
+            }
+          }
+        })
+     },
+     arrayBufferToBase64 (buffer) {
+        var binary = ''
+        var bytes = new Uint8Array(buffer)
+        var len = bytes.byteLength
+        for (var i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i])
+        }
+        return window.btoa(binary)
+      },
       handlePreview(file) {
         console.log(file);
       },
@@ -307,6 +328,7 @@ export default{
                         message: "change settings successfully!",
                         type: "success",
                     });
+                    this.$router.go(0)
                   }else{
                     this.$message({
                         message: "fail to change settings!",
@@ -326,6 +348,7 @@ export default{
       ,
       handleClose3(){
          this.$refs.doctypeCrfile.submit();
+         
       }
     },
     props:{
@@ -334,7 +357,6 @@ export default{
     components:{  SwitchButton ,Setting,Lock,Avatar}
 }
 
-//const routeiD=ref(JSON.parse(localStorage.getItem('userid')))
 </script>
 <style>
 
