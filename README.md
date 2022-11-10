@@ -34,7 +34,7 @@ To run the app, download code zip to your local directory, then
 
 cd your_directory
 
-npm in install
+npm install
 
 npm install element-plus --save
 
